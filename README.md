@@ -1,2 +1,2 @@
 # wp-nav-menu-cache
-This plugin is not yet ready for use!
+WIP. This plugin is not yet ready for use!!!
