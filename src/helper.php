@@ -3,127 +3,124 @@
 use JazzMan\WpNavMenuCache\NavMenuCache;
 
 if (!function_exists('app_get_term_link')) {
-	/**
-	 * @return false|string
-	 */
-	function app_get_term_link(int $termId, string $termTaxonomy) {
-		global $wp_rewrite;
+    /**
+     * @return false|string
+     */
+    function app_get_term_link(int $termId, string $termTaxonomy) {
+        global $wp_rewrite;
 
-		$term = get_term($termId, $termTaxonomy);
+        $term = get_term($termId, $termTaxonomy);
 
-		if (!$term instanceof WP_Term) {
-			return false;
-		}
+        if (!$term instanceof WP_Term) {
+            return false;
+        }
 
-		$taxonomy = get_taxonomy($term->taxonomy);
+        $taxonomy = get_taxonomy($term->taxonomy);
 
-		if (!$taxonomy instanceof WP_Taxonomy) {
-			return false;
-		}
+        if (!$taxonomy instanceof WP_Taxonomy) {
+            return false;
+        }
 
-		$termlink = $wp_rewrite->get_extra_permastruct($term->taxonomy);
+        $termlink = $wp_rewrite->get_extra_permastruct($term->taxonomy);
 
-		/** @var false|string $termlink */
-		$termlink = apply_filters('pre_term_link', $termlink, $term);
+        /** @var false|string $termlink */
+        $termlink = apply_filters('pre_term_link', $termlink, $term);
 
-		$termlinkSlug = $term->slug;
+        $termlinkSlug = $term->slug;
 
-		if (empty($termlink)) {
-			switch (true) {
-				case 'category' === $term->taxonomy:
-					$termlink = sprintf('?cat=%s', $term->term_id);
+        if (empty($termlink)) {
+            switch (true) {
+                case 'category' === $term->taxonomy:
+                    $termlink = sprintf('?cat=%s', $term->term_id);
 
-					break;
+                    break;
 
-				case !empty($taxonomy->query_var):
-					$termlink = sprintf('?%s=%s', $taxonomy->query_var, $term->slug);
+                case !empty($taxonomy->query_var):
+                    $termlink = sprintf('?%s=%s', $taxonomy->query_var, $term->slug);
 
-					break;
+                    break;
 
-				default:
-					$termlink = sprintf('?taxonomy=%s&term=%s', $term->taxonomy, $term->slug);
+                default:
+                    $termlink = sprintf('?taxonomy=%s&term=%s', $term->taxonomy, $term->slug);
 
-					break;
-			}
+                    break;
+            }
 
-			return app_term_link_filter($term, home_url($termlink));
-		}
+            return app_term_link_filter($term, home_url($termlink));
+        }
 
-		if (!empty($taxonomy->rewrite) && $taxonomy->rewrite['hierarchical']) {
-			/** @var string[] $hierarchicalSlugs */
-			$hierarchicalSlugs = [];
+        if (!empty($taxonomy->rewrite) && $taxonomy->rewrite['hierarchical']) {
+            /** @var string[] $hierarchicalSlugs */
+            $hierarchicalSlugs = [];
 
-			if ($term->parent) {
-				$ancestorsKey = sprintf('taxonomy_ancestors_%d_%s', $term->term_id, $term->taxonomy);
+            if ($term->parent) {
+                $ancestorsKey = sprintf('taxonomy_ancestors_%d_%s', $term->term_id, $term->taxonomy);
 
-				/** @var false|string[] $hierarchicalSlugs */
-				$hierarchicalSlugs = wp_cache_get($ancestorsKey, NavMenuCache::CACHE_GROUP);
+                /** @var false|string[] $hierarchicalSlugs */
+                $hierarchicalSlugs = wp_cache_get($ancestorsKey, NavMenuCache::CACHE_GROUP);
 
-				if (empty($hierarchicalSlugs)) {
-					/** @var string[] $result */
-					$result = [];
+                if (empty($hierarchicalSlugs)) {
+                    /** @var string[] $result */
+                    $result = [];
 
-					/** @var false|\stdClass[] $ancestors */
-					$ancestors = app_get_taxonomy_ancestors($term->term_id, $term->taxonomy, PDO::FETCH_CLASS);
+                    /** @var false|\stdClass[] $ancestors */
+                    $ancestors = app_get_taxonomy_ancestors($term->term_id, $term->taxonomy, PDO::FETCH_CLASS);
 
-					if (!empty($ancestors)) {
-						foreach ($ancestors as $ancestor) {
-							$result[] = (string) $ancestor->term_slug;
-						}
-					}
+                    if (!empty($ancestors)) {
+                        foreach ($ancestors as $ancestor) {
+                            $result[] = (string) $ancestor->term_slug;
+                        }
+                    }
 
-					$hierarchicalSlugs = $result;
+                    $hierarchicalSlugs = $result;
 
-					wp_cache_set($ancestorsKey, $result, NavMenuCache::CACHE_GROUP);
-				}
-				$hierarchicalSlugs = array_reverse($hierarchicalSlugs);
-			}
+                    wp_cache_set($ancestorsKey, $result, NavMenuCache::CACHE_GROUP);
+                }
+                $hierarchicalSlugs = array_reverse($hierarchicalSlugs);
+            }
 
-			$hierarchicalSlugs[] = $term->slug;
+            $hierarchicalSlugs[] = $term->slug;
 
-			$termlinkSlug = implode('/', $hierarchicalSlugs);
-		}
+            $termlinkSlug = implode('/', $hierarchicalSlugs);
+        }
 
-		$termlink = str_replace(sprintf('%%%s%%', $term->taxonomy), $termlinkSlug, $termlink);
+        $termlink = str_replace(sprintf('%%%s%%', $term->taxonomy), $termlinkSlug, $termlink);
 
-		$termlink = home_url(user_trailingslashit($termlink, 'category'));
+        $termlink = home_url(user_trailingslashit($termlink, 'category'));
 
-		return app_term_link_filter($term, $termlink);
-	}
+        return app_term_link_filter($term, $termlink);
+    }
 }
 
 if (!function_exists('app_term_link_filter')) {
-	/**
-	 * @param  \WP_Term  $term
-	 * @param  string  $termlink
-	 *
-	 * @return string
-	 */
-	function app_term_link_filter(WP_Term $term, string $termlink): string {
-		if ('post_tag' == $term->taxonomy) {
-			$termlink = (string) apply_filters('tag_link', $termlink, $term->term_id);
-		} elseif ('category' == $term->taxonomy) {
-			$termlink = (string) apply_filters('category_link', $termlink, $term->term_id);
-		}
+    /**
+     * @param \WP_Term $term
+     */
+    function app_term_link_filter(WP_Term $term, string $termlink): string {
+        if ('post_tag' == $term->taxonomy) {
+            $termlink = (string) apply_filters('tag_link', $termlink, $term->term_id);
+        } elseif ('category' == $term->taxonomy) {
+            $termlink = (string) apply_filters('category_link', $termlink, $term->term_id);
+        }
 
-		return (string) apply_filters('term_link', $termlink, $term, $term->taxonomy);
-	}
+        return (string) apply_filters('term_link', $termlink, $term, $term->taxonomy);
+    }
 }
 
 if (!function_exists('app_get_taxonomy_ancestors')) {
-	/**
-	 * @param array<array-key, mixed> ...$args PDO fetch options
-	 *
-	 * @return array<string,int|string>|false
-	 */
-	function app_get_taxonomy_ancestors(int $termId, string $taxonomy, int $mode = PDO::FETCH_COLUMN, ...$args) {
-		global $wpdb;
+    /**
+     * @param array<array-key, mixed> ...$args PDO fetch options
+     *
+     * @return array<string,int|string>|false
+     */
+    function app_get_taxonomy_ancestors(int $termId, string $taxonomy, int $mode = PDO::FETCH_COLUMN, ...$args) {
+        global $wpdb;
 
-		try {
-			$pdo = app_db_pdo();
+        try {
+            $pdo = app_db_pdo();
 
-			$pdoStatement = $pdo->prepare(
-				<<<SQL
+            $pdoStatement = $pdo->prepare(
+                <<<SQL
                     with recursive ancestors as (
                       select
                         cat_1.term_id,
@@ -151,42 +148,42 @@ if (!function_exists('app_get_taxonomy_ancestors')) {
                     from ancestors a
                       left join {$wpdb->terms} as term on term.term_id = a.parent
                     SQL
-			);
+            );
 
-			$pdoStatement->execute(['term_id' => $termId, 'taxonomy' => $taxonomy]);
+            $pdoStatement->execute(['term_id' => $termId, 'taxonomy' => $taxonomy]);
 
-			/** @var array<string,int|string> $ancestors */
-			$ancestors = $pdoStatement->fetchAll($mode, ...$args);
+            /** @var array<string,int|string> $ancestors */
+            $ancestors = $pdoStatement->fetchAll($mode, ...$args);
 
-			if (!empty($ancestors)) {
-				return $ancestors;
-			}
+            if (!empty($ancestors)) {
+                return $ancestors;
+            }
 
-			return false;
-		} catch (Exception $exception) {
-			app_error_log($exception, 'app_get_taxonomy_ancestors');
+            return false;
+        } catch (Exception $exception) {
+            app_error_log($exception, 'app_get_taxonomy_ancestors');
 
-			return false;
-		}
-	}
+            return false;
+        }
+    }
 }
 
 if (!function_exists('app_term_get_all_children')) {
-	/**
-	 * @return false|int[]
-	 */
-	function app_term_get_all_children(int $termId) {
-		global $wpdb;
+    /**
+     * @return false|int[]
+     */
+    function app_term_get_all_children(int $termId) {
+        global $wpdb;
 
-		/** @var int[] $children */
-		$children = wp_cache_get(sprintf('term_all_children_%d', $termId), NavMenuCache::CACHE_GROUP);
+        /** @var int[] $children */
+        $children = wp_cache_get(sprintf('term_all_children_%d', $termId), NavMenuCache::CACHE_GROUP);
 
-		if (empty($children)) {
-			try {
-				$pdo = app_db_pdo();
+        if (empty($children)) {
+            try {
+                $pdo = app_db_pdo();
 
-				$pdoStatement = $pdo->prepare(
-					<<<SQL
+                $pdoStatement = $pdo->prepare(
+                    <<<SQL
                         with recursive children as (
                           select
                             d.term_id,
@@ -205,23 +202,23 @@ if (!function_exists('app_term_get_all_children')) {
                           c.term_id as term_id
                         from children c
                         SQL
-				);
+                );
 
-				$pdoStatement->execute(['term_id' => $termId]);
+                $pdoStatement->execute(['term_id' => $termId]);
 
-				/** @var false|int[] $children */
-				$children = $pdoStatement->fetchAll(PDO::FETCH_COLUMN);
+                /** @var false|int[] $children */
+                $children = $pdoStatement->fetchAll(PDO::FETCH_COLUMN);
 
-				if (!empty($children)) {
-					sort($children);
+                if (!empty($children)) {
+                    sort($children);
 
-					wp_cache_set(sprintf('term_all_children_%d', $termId), $children, NavMenuCache::CACHE_GROUP);
-				}
-			} catch (Exception $exception) {
-				app_error_log($exception, __FUNCTION__);
-			}
-		}
+                    wp_cache_set(sprintf('term_all_children_%d', $termId), $children, NavMenuCache::CACHE_GROUP);
+                }
+            } catch (Exception $exception) {
+                app_error_log($exception, __FUNCTION__);
+            }
+        }
 
-		return $children;
-	}
+        return $children;
+    }
 }

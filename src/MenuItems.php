@@ -3,8 +3,8 @@
 namespace JazzMan\WpNavMenuCache;
 
 use Exception;
-
 use JazzMan\WpNavMenuCacheStub\MenuItem;
+
 use function Latitude\QueryBuilder\alias;
 use function Latitude\QueryBuilder\field;
 use function Latitude\QueryBuilder\on;

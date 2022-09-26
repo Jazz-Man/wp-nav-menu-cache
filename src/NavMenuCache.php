@@ -9,41 +9,38 @@ use WP_Error;
 use WP_Term;
 
 class NavMenuCache implements AutoloadInterface {
-	/**
-	 * @var string
-	 */
-	public const CACHE_GROUP = 'wp-nav-menu-cache';
+    /**
+     * @var string
+     */
+    public const CACHE_GROUP = 'wp-nav-menu-cache';
 
+    public function load(): void {
+        /**
+         * We clear the cache when the post is updated.
+         */
+        add_action('delete_post', [__CLASS__, 'resetMenuCacheByMenuId']);
+        add_action('wp_update_nav_menu_item', [__CLASS__, 'resetMenuCacheByMenuId']);
+        add_action('wp_add_nav_menu_item', [__CLASS__, 'resetMenuCacheByMenuId']);
 
-	public function load(): void {
-	    /**
-	     * We clear the cache when the post is updated
-	     */
-		add_action('delete_post', [__CLASS__, 'resetMenuCacheByMenuId']);
-	    add_action('wp_update_nav_menu_item', [__CLASS__, 'resetMenuCacheByMenuId']);
-	    add_action('wp_add_nav_menu_item', [__CLASS__, 'resetMenuCacheByMenuId']);
-
-	    /**
-	     * We clear the cache when the term is updated
-	     */
-	    add_action('delete_term', [__CLASS__, 'resetMenuCacheByTermId']);
-	    add_action('wp_create_nav_menu', [__CLASS__, 'resetMenuCacheByTermId']);
-	    add_action('saved_nav_menu', [__CLASS__, 'resetMenuCacheByTermId']);
-
-
+        /**
+         * We clear the cache when the term is updated.
+         */
+        add_action('delete_term', [__CLASS__, 'resetMenuCacheByTermId']);
+        add_action('wp_create_nav_menu', [__CLASS__, 'resetMenuCacheByTermId']);
+        add_action('saved_nav_menu', [__CLASS__, 'resetMenuCacheByTermId']);
 
         add_filter('wp_nav_menu_args', [__CLASS__, 'setMenuFallbackParams']);
         add_filter('pre_wp_nav_menu', [$this, 'buildWpNavMenu'], 10, 2);
 
-		add_action('saved_term', [__CLASS__, 'termsCache'], 10, 3);
+        add_action('saved_term', [__CLASS__, 'termsCache'], 10, 3);
     }
 
-	public static function termsCache(int $termId, int $termTaxId, string $taxonomy): void {
-		wp_cache_delete(sprintf('taxonomy_ancestors_%d_%s', $termId, $taxonomy), self::CACHE_GROUP);
-		wp_cache_delete(sprintf('term_all_children_%d', $termId), self::CACHE_GROUP);
+    public static function termsCache(int $termId, int $termTaxId, string $taxonomy): void {
+        wp_cache_delete(sprintf('taxonomy_ancestors_%d_%s', $termId, $taxonomy), self::CACHE_GROUP);
+        wp_cache_delete(sprintf('term_all_children_%d', $termId), self::CACHE_GROUP);
 
-		app_term_get_all_children($termId);
-	}
+        app_term_get_all_children($termId);
+    }
 
     /**
      * @param NavMenuArgs|\stdClass $args
@@ -148,6 +145,30 @@ class NavMenuCache implements AutoloadInterface {
         return $args;
     }
 
+    public static function resetMenuCacheByTermId(int $termId): void {
+        /** @var WP_Error|WP_Term $term */
+        $term = get_term($termId, 'nav_menu');
+
+        if ($term instanceof WP_Term) {
+            self::deleteMenuItemCache($term);
+        }
+    }
+
+    public static function resetMenuCacheByMenuId(int $menuId): void {
+        /** @var WP_Error|WP_Term[] $terms */
+        $terms = wp_get_post_terms($menuId, 'nav_menu');
+
+        if (!$terms instanceof WP_Error) {
+            foreach ($terms as $term) {
+                self::deleteMenuItemCache($term);
+            }
+        }
+    }
+
+    public static function getMenuItemCacheKey(WP_Term $wpTerm): string {
+        return sprintf('%s_%s', $wpTerm->taxonomy, $wpTerm->slug);
+    }
+
     /**
      * @param NavMenuArgs|\stdClass $args
      */
@@ -206,31 +227,7 @@ class NavMenuCache implements AutoloadInterface {
         return $navMenu;
     }
 
-	public static function resetMenuCacheByTermId(int $termId): void {
-		/** @var WP_Error|WP_Term $term */
-		$term = get_term($termId, 'nav_menu');
-
-		if ($term instanceof WP_Term) {
-			self::deleteMenuItemCache($term);
-		}
-	}
-
-	public static function resetMenuCacheByMenuId(int $menuId): void {
-		/** @var WP_Error|WP_Term[] $terms */
-		$terms = wp_get_post_terms($menuId, 'nav_menu');
-
-		if (!$terms instanceof WP_Error) {
-			foreach ($terms as $term) {
-				self::deleteMenuItemCache($term);
-			}
-		}
-	}
-
-	public static function getMenuItemCacheKey(WP_Term $wpTerm): string {
-		return sprintf('%s_%s', $wpTerm->taxonomy, $wpTerm->slug);
-	}
-
-	private static function deleteMenuItemCache(WP_Term $wpTerm): void {
-		wp_cache_delete(self::getMenuItemCacheKey($wpTerm), 'menu_items');
-	}
+    private static function deleteMenuItemCache(WP_Term $wpTerm): void {
+        wp_cache_delete(self::getMenuItemCacheKey($wpTerm), 'menu_items');
+    }
 }
