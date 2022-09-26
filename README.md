@@ -1,2 +1,2 @@
 # wp-nav-menu-cache
-WIP. This plugin is not yet ready for use!!!
+Caches WordPress menus to improve page loading time.

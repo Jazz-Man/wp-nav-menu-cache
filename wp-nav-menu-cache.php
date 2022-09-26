@@ -2,6 +2,7 @@
 /**
  * Plugin Name:         wp-nav-menu-cache
  * Plugin URI:          https://github.com/Jazz-Man/wp-nav-menu-cache
+ * Description:         Caches WordPress menus to improve page loading time.
  * Author:              Vasyl Sokolyk
  * Author URI:          https://www.linkedin.com/in/sokolyk-vasyl
  * Requires at least:   5.2
