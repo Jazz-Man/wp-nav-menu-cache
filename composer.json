@@ -22,7 +22,6 @@
     },
     "require": {
         "php": "^7.4|^8.1",
-        "ext-PDO": "*",
         "composer/installers": "^2.2",
         "jazzman/autoload-interface": "^0.3.1",
         "jazzman/wp-app-config": "^2.3",
