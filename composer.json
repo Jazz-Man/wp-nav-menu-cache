@@ -16,14 +16,14 @@
         "apcu-autoloader": true,
         "allow-plugins": {
             "roots/wordpress-core-installer": true,
-            "composer/installers": true,
-            "phpstan/extension-installer": true
+            "phpstan/extension-installer": true,
+            "composer/installers": true
         }
     },
     "require": {
         "php": "^7.4|^8.1",
         "ext-PDO": "*",
-        "composer/installers": "^1",
+        "composer/installers": "^2.2",
         "jazzman/autoload-interface": "^0.3.1",
         "jazzman/wp-app-config": "^2.3",
         "jazzman/wp-db-pdo": "^0.1.4"
