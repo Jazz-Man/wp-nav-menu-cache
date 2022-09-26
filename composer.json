@@ -1,5 +1,6 @@
 {
     "name": "jazzman/wp-nav-menu-cache",
+    "type": "wordpress-muplugin",
     "license": "MIT",
     "authors": [
         {
@@ -12,11 +13,19 @@
         "preferred-install": "dist",
         "optimize-autoloader": true,
         "classmap-authoritative": true,
-        "apcu-autoloader": true
+        "apcu-autoloader": true,
+        "allow-plugins": {
+            "roots/wordpress-core-installer": true,
+            "composer/installers": true
+        }
     },
     "require": {
-        "php": "^7.1",
-        "jazzman/wp-db-pdo": "^0.1.1"
+        "php": "^7.4|^8.1",
+        "ext-PDO": "*",
+        "composer/installers": "^1",
+        "jazzman/autoload-interface": "^0.3.1",
+        "jazzman/wp-app-config": "^2.3",
+        "jazzman/wp-db-pdo": "^0.1.4"
     },
     "extra": {
         "installer-paths": {
@@ -31,8 +40,49 @@
             "JazzMan\\WpNavMenuCache\\": "src"
         },
         "files": [
-            "src/wp-nav-menu-cache.php"
+            "src/helper.php"
         ]
     },
-    "description": ""
+    "autoload-dev": {
+        "psr-4": {
+            "JazzMan\\WpNavMenuCacheStub\\":"stubs"
+        }
+    },
+    "description": "",
+    "require-dev": {
+        "jazzman/php-cs-fixer-rules": "^0.1.2",
+        "phpmd/phpmd": "@stable",
+        "rector/rector": "^0.14.3",
+        "roave/security-advisories": "@dev",
+        "roots/wordpress": "^6.0",
+        "szepeviktor/phpstan-wordpress": "^1.1",
+        "vimeo/psalm": "^4.27"
+    },
+    "scripts": {
+        "rm-cache" : [
+            "phpstan clear-result-cache",
+            "psalm --clear-cache",
+            "psalm --clear-global-cache"
+        ],
+        "cs-check": [
+            "@php-cs-fixer --dry-run"
+        ],
+        "cs-fix": [
+            "@php-cs-fixer"
+        ],
+        "update-baseline": [
+            "@update-baseline-phpmd",
+            "@baseline-phpstan",
+            "@update-baseline-psalm"
+        ],
+        "init-baseline-phpmd": "@phpmd --generate-baseline",
+        "update-baseline-phpmd": "@phpmd --update-baseline",
+        "init-baseline-psalm": "@psalm --set-baseline=psalm-baseline.xml",
+        "update-baseline-psalm": "@psalm --update-baseline=psalm-baseline.xml",
+        "baseline-phpstan": "@phpstan --generate-baseline=phpstan-baseline.neon",
+        "phpstan": "phpstan --no-progress",
+        "phpmd": "phpmd . text phpmd.ruleset.xml --exclude 'cache/*,vendor/*,stubs/*'",
+        "psalm": "psalm --config=psalm.xml --show-info=true --stats --no-progress",
+        "php-cs-fixer": "php-cs-fixer fix -vvv --diff"
+    }
 }
