@@ -16,7 +16,8 @@
         "apcu-autoloader": true,
         "allow-plugins": {
             "roots/wordpress-core-installer": true,
-            "composer/installers": true
+            "composer/installers": true,
+            "phpstan/extension-installer": true
         }
     },
     "require": {
@@ -52,6 +53,7 @@
     "require-dev": {
         "jazzman/php-cs-fixer-rules": "^0.1.2",
         "phpmd/phpmd": "@stable",
+        "phpstan/extension-installer": "^1.1",
         "rector/rector": "^0.14.3",
         "roave/security-advisories": "@dev",
         "roots/wordpress": "^6.0",
@@ -69,6 +71,11 @@
         ],
         "cs-fix": [
             "@php-cs-fixer"
+        ],
+        "init-baseline": [
+            "@init-baseline-phpmd",
+            "@init-baseline-psalm",
+            "@baseline-phpstan"
         ],
         "update-baseline": [
             "@update-baseline-phpmd",
