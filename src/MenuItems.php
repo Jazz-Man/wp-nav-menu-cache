@@ -96,8 +96,6 @@ class MenuItems {
             'type' => '_menu_item_type',
             'url' => '_menu_item_url',
             'xfn' => '_menu_item_xfn',
-            'hide_link' => 'menu-item-mm-hide-link',
-            'image_link' => 'menu-item-mm-image-link',
         ];
 
         foreach ($menuMetaFields as $field => $metaKey) {
@@ -179,38 +177,34 @@ class MenuItems {
 
     /**
      * @param MenuItem|\stdClass $menuItem
-     *
-     * @return MenuItem|\stdClass
      */
-    private static function setMenuItemLabels(&$menuItem) {
+    private static function setMenuItemLabels(&$menuItem): void {
+        $currentMenuTitle = (string) $menuItem->post_title;
+
         $menuItem->post_title = self::getMenuItemPostTitle($menuItem);
 
         $menuTitle = $menuItem->post_title;
 
         switch ($menuItem->type) {
             case 'taxonomy':
-                $typeLabel = (string) $menuItem->object;
+                $typeLabel = sprintf('Taxonomy%s', self::getMenuTaxonomyLabels($menuItem));
 
-                $taxonomy = get_taxonomy((string) $menuItem->object);
-
-                if ($taxonomy instanceof WP_Taxonomy) {
-                    $taxonomyLabels = get_taxonomy_labels($taxonomy);
-
-                    $typeLabel = !empty($taxonomyLabels->singular_name) ? (string) $taxonomyLabels->singular_name : (string) $menuItem->object;
-                }
-
-                $menuTitle = (string) $menuItem->term_name;
+                $menuTitle = !empty($currentMenuTitle) ? $currentMenuTitle : (string) $menuItem->term_name;
 
                 break;
 
             case 'post_type_archive':
+                $postTypeLabel = '';
+
                 $postTypeObject = get_post_type_object((string) $menuItem->object);
 
                 if ($postTypeObject instanceof WP_Post_Type) {
-                    $menuTitle = (string) $postTypeObject->labels->archives;
+                    $menuTitle = !empty($currentMenuTitle) ? $currentMenuTitle : (string) $postTypeObject->labels->archives;
+
+                    $postTypeLabel .= sprintf(': %s', $postTypeObject->label);
                 }
 
-                $typeLabel = __('Post Type Archive');
+                $typeLabel = sprintf('Post Type Archive%s', $postTypeLabel);
 
                 break;
 
@@ -223,8 +217,16 @@ class MenuItems {
                     $typeLabel = (string) $postTypeObject->labels->singular_name;
                 }
 
-                if (!empty($menuItem->original_post_title)) {
-                    $menuTitle = (string) apply_filters('the_title', $menuItem->original_post_title, $menuItem->object_id);
+                $postTitle = '';
+
+                if (!empty($currentMenuTitle)) {
+                    $postTitle = $currentMenuTitle;
+                } elseif (!empty($menuItem->original_post_title)) {
+                    $postTitle = (string) $menuItem->original_post_title;
+                }
+
+                if (!empty($postTitle)) {
+                    $menuTitle = (string) apply_filters('the_title', $postTitle, $menuItem->object_id);
                 }
 
                 if (!empty($menuItem->original_post_status) && 'publish' !== $menuItem->original_post_status && \function_exists('get_post_states')) {
@@ -245,8 +247,26 @@ class MenuItems {
         $menuItem->title = $menuTitle;
 
         $menuItem->type_label = $typeLabel;
+    }
 
-        return $menuItem;
+    /**
+     * @param MenuItem|\stdClass $menuItem
+     */
+    private static function getMenuTaxonomyLabels($menuItem): string {
+        $label = '';
+
+        $taxonomy = get_taxonomy((string) $menuItem->object);
+
+        if ($taxonomy instanceof WP_Taxonomy) {
+            $labels = get_taxonomy_labels($taxonomy);
+
+            $label = sprintf(
+                ': %s',
+                !empty($labels->singular_name) ? (string) $labels->singular_name : $taxonomy->label
+            );
+        }
+
+        return $label;
     }
 
     /**

@@ -104,7 +104,7 @@ class NavMenuCache implements AutoloadInterface {
         /** @var array<int,MenuItem> $sortedMenuItems */
         $sortedMenuItems = apply_filters('wp_nav_menu_objects', $sortedMenuItems, $args);
 
-        $items = walk_nav_menu_tree($sortedMenuItems, $args->depth, $args);
+        $items = walk_nav_menu_tree($sortedMenuItems, (int) $args->depth, $args);
         unset($sortedMenuItems);
 
         $wrapId = $this->getMenuWrapId($menu, $args);
@@ -178,7 +178,7 @@ class NavMenuCache implements AutoloadInterface {
 
         // Attributes.
         if (!empty($args->menu_id)) {
-            return $args->menu_id;
+            return (string) $args->menu_id;
         }
 
         $wrapId = sprintf('menu-%s', $wpTerm->slug);
@@ -187,6 +187,7 @@ class NavMenuCache implements AutoloadInterface {
             $pattern = '#-(\d+)$#';
             preg_match($pattern, $wrapId, $matches);
 
+            /** @var null|int[] $matches */
             $wrapId = empty($matches) ? $wrapId.'-1' : (string) preg_replace($pattern, '-'.++$matches[1], $wrapId);
         }
 
@@ -208,12 +209,12 @@ class NavMenuCache implements AutoloadInterface {
                 'class' => $args->container_class ?: sprintf('menu-%s-container', $wpTerm->slug),
             ];
 
-            if ($args->container_id) {
-                $attributes['id'] = $args->container_id;
+            if (!empty($args->container_id)) {
+                $attributes['id'] = (string) $args->container_id;
             }
 
             if ('nav' === $args->container && !empty($args->container_aria_label)) {
-                $attributes['aria-label'] = $args->container_aria_label;
+                $attributes['aria-label'] = (string) $args->container_aria_label;
             }
 
             return sprintf(
