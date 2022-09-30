@@ -16,6 +16,7 @@ class NavMenuArgs extends stdClass {
      * Desired menu. Accepts a menu ID, slug, name, or object. Default empty.
      *
      * @var int|string|WP_Term
+     *
      * @phpstan-ignore-next-line
      */
     public $menu = 0;
