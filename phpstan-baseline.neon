@@ -1,6 +1,6 @@
 parameters:
 	ignoreErrors:
 		-
-			message: "#^Parameter \\#2 \\.\\.\\.\\$args of method PDOStatement\\:\\:fetchAll\\(\\) expects \\(callable\\(\\)\\: mixed\\)\\|int\\|string, array given\\.$#"
+			message: "#^Parameter \\#2 \\$fetch_argument of method PDOStatement\\:\\:fetchAll\\(\\) expects \\(callable\\(\\)\\: mixed\\)\\|int\\|string, array given\\.$#"
 			count: 1
 			path: src/helper.php
