@@ -33,8 +33,8 @@ return static function (RectorConfig $config): void {
     $config->cacheDirectory(__DIR__.'/cache/rector');
 
     $config->paths([
+        __DIR__,
         __DIR__.'/src',
-        __DIR__.'/wp-performance.php',
     ]);
 
     $config->skip(
@@ -42,6 +42,7 @@ return static function (RectorConfig $config): void {
             // or fnmatch
             __DIR__.'/vendor',
             __DIR__.'/cache',
+            __DIR__.'/rector.php',
             CallableThisArrayToAnonymousFunctionRector::class,
             ClassConstantToSelfClassRector::class,
             RemoveExtraParametersRector::class,
