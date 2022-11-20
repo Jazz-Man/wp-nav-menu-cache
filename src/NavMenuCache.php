@@ -5,10 +5,8 @@ namespace JazzMan\WpNavMenuCache;
 use JazzMan\AutoloadInterface\AutoloadInterface;
 use JazzMan\WpNavMenuCacheStub\MenuItem;
 use JazzMan\WpNavMenuCacheStub\NavMenuArgs;
-use WP_Error;
-use WP_Term;
 
-class NavMenuCache implements AutoloadInterface {
+final class NavMenuCache implements AutoloadInterface {
     /**
      * @var string
      */
@@ -146,33 +144,33 @@ class NavMenuCache implements AutoloadInterface {
     }
 
     public static function resetMenuCacheByTermId(int $termId): void {
-        /** @var WP_Error|WP_Term $term */
+        /** @var \WP_Error|\WP_Term $term */
         $term = get_term($termId, 'nav_menu');
 
-        if ($term instanceof WP_Term) {
+        if ($term instanceof \WP_Term) {
             self::deleteMenuItemCache($term);
         }
     }
 
     public static function resetMenuCacheByMenuId(int $menuId): void {
-        /** @var WP_Error|WP_Term[] $terms */
+        /** @var \WP_Error|\WP_Term[] $terms */
         $terms = wp_get_post_terms($menuId, 'nav_menu');
 
-        if (!$terms instanceof WP_Error) {
+        if (!$terms instanceof \WP_Error) {
             foreach ($terms as $term) {
                 self::deleteMenuItemCache($term);
             }
         }
     }
 
-    public static function getMenuItemCacheKey(WP_Term $wpTerm): string {
+    public static function getMenuItemCacheKey(\WP_Term $wpTerm): string {
         return sprintf('%s_%s', $wpTerm->taxonomy, $wpTerm->slug);
     }
 
     /**
      * @param NavMenuArgs|\stdClass $args
      */
-    private function getMenuWrapId(WP_Term $wpTerm, $args): string {
+    private function getMenuWrapId(\WP_Term $wpTerm, $args): string {
         /** @var string[] $menuIdSlugs */
         static $menuIdSlugs = [];
 
@@ -199,7 +197,7 @@ class NavMenuCache implements AutoloadInterface {
     /**
      * @param NavMenuArgs|\stdClass $args
      */
-    private function wrapToContainer($args, WP_Term $wpTerm, string $navMenu): string {
+    private function wrapToContainer($args, \WP_Term $wpTerm, string $navMenu): string {
         /** @var string[] $allowedTags */
         $allowedTags = (array) apply_filters('wp_nav_menu_container_allowedtags', ['div', 'nav']);
 
@@ -228,7 +226,7 @@ class NavMenuCache implements AutoloadInterface {
         return $navMenu;
     }
 
-    private static function deleteMenuItemCache(WP_Term $wpTerm): void {
+    private static function deleteMenuItemCache(\WP_Term $wpTerm): void {
         wp_cache_delete(self::getMenuItemCacheKey($wpTerm), 'menu_items');
     }
 }

@@ -2,7 +2,6 @@
 
 namespace JazzMan\WpNavMenuCache;
 
-use Exception;
 use JazzMan\WpNavMenuCacheStub\MenuItem;
 
 use function Latitude\QueryBuilder\alias;
@@ -11,18 +10,12 @@ use function Latitude\QueryBuilder\on;
 
 use Latitude\QueryBuilder\Query;
 use Latitude\QueryBuilder\QueryFactory;
-use PDO;
-use stdClass;
-use WP_Post;
-use WP_Post_Type;
-use WP_Taxonomy;
-use WP_Term;
 
-class MenuItems {
+final class MenuItems {
     /**
      * @return MenuItem[]|\stdClass[]
      */
-    public static function getItems(WP_Term $wpTerm): array {
+    public static function getItems(\WP_Term $wpTerm): array {
         $cacheKey = NavMenuCache::getMenuItemCacheKey($wpTerm);
 
         /** @var false|MenuItem[]|\stdClass[] $menuItems */
@@ -39,16 +32,16 @@ class MenuItems {
                 $pdoStatement->execute($query->params());
 
                 /** @var MenuItem[]|\stdClass[] $menuItems */
-                $menuItems = $pdoStatement->fetchAll(PDO::FETCH_OBJ);
+                $menuItems = $pdoStatement->fetchAll(\PDO::FETCH_OBJ);
 
                 foreach ($menuItems as $key => $item) {
                     $menuItems[$key] = self::setupNavMenuItem($item);
                 }
 
                 wp_cache_set($cacheKey, $menuItems, 'menu_items');
-            } catch (Exception $exception) {
+            } catch (\Exception $exception) {
                 /** @var MenuItem|\stdClass $item */
-                $item = new stdClass();
+                $item = new \stdClass();
                 $item->_invalid = true;
 
                 $menuItems = [];
@@ -61,7 +54,7 @@ class MenuItems {
         return $menuItems;
     }
 
-    private static function generateSql(WP_Term $wpTerm): Query {
+    private static function generateSql(\WP_Term $wpTerm): Query {
         global $wpdb;
 
         $factory = new QueryFactory();
@@ -150,7 +143,7 @@ class MenuItems {
          *
          * @var MenuItem|\stdClass $menuItem
          */
-        $menuItem = new WP_Post($menuItem);
+        $menuItem = new \WP_Post($menuItem);
 
         self::setMenuItemLabels($menuItem);
 
@@ -198,7 +191,7 @@ class MenuItems {
 
                 $postTypeObject = get_post_type_object((string) $menuItem->object);
 
-                if ($postTypeObject instanceof WP_Post_Type) {
+                if ($postTypeObject instanceof \WP_Post_Type) {
                     $menuTitle = !empty($currentMenuTitle) ? $currentMenuTitle : (string) $postTypeObject->labels->archives;
 
                     $postTypeLabel .= sprintf(': %s', $postTypeObject->label);
@@ -213,7 +206,7 @@ class MenuItems {
 
                 $postTypeObject = get_post_type_object((string) $menuItem->object);
 
-                if ($postTypeObject instanceof WP_Post_Type) {
+                if ($postTypeObject instanceof \WP_Post_Type) {
                     $typeLabel = (string) $postTypeObject->labels->singular_name;
                 }
 
@@ -230,7 +223,7 @@ class MenuItems {
                 }
 
                 if (!empty($menuItem->original_post_status) && 'publish' !== $menuItem->original_post_status && \function_exists('get_post_states')) {
-                    /** @var WP_Post $originalPost */
+                    /** @var \WP_Post $originalPost */
                     $originalPost = get_post((int) $menuItem->object_id);
 
                     $typeLabel = wp_strip_all_tags(implode(', ', get_post_states($originalPost)));
@@ -257,7 +250,7 @@ class MenuItems {
 
         $taxonomy = get_taxonomy((string) $menuItem->object);
 
-        if ($taxonomy instanceof WP_Taxonomy) {
+        if ($taxonomy instanceof \WP_Taxonomy) {
             $labels = get_taxonomy_labels($taxonomy);
 
             $label = sprintf(
@@ -295,7 +288,7 @@ class MenuItems {
             case 'post_type_archive':
                 $object = get_post_type_object((string) $menuItem->object);
 
-                $description = $object instanceof WP_Post_Type ? $object->description : '';
+                $description = $object instanceof \WP_Post_Type ? $object->description : '';
 
                 break;
 
@@ -354,7 +347,7 @@ class MenuItems {
             case 'taxonomy':
                 $term = get_term((int) $menuItem->object_id, (string) $menuItem->object);
 
-                return !$term instanceof WP_Term;
+                return !$term instanceof \WP_Term;
 
             default:
                 return false;

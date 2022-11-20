@@ -3,22 +3,14 @@
 namespace JazzMan\WpNavMenuCache;
 
 use JazzMan\WpNavMenuCacheStub\MenuItem;
-use WP_Error;
-use WP_Post;
-use WP_Post_Type;
-use WP_Query;
-use WP_Rewrite;
-use WP_Taxonomy;
-use WP_Term;
-use WP_User;
 
-class MenuItemClasses {
-    private WP_Rewrite $wpRewrite;
+final class MenuItemClasses {
+    private \WP_Rewrite $wpRewrite;
 
-    private WP_Query $wpQuery;
+    private \WP_Query $wpQuery;
 
     /**
-     * @var null|WP_Post|WP_Post_Type|WP_Term|WP_User
+     * @var null|\WP_Post|\WP_Post_Type|\WP_Term|\WP_User
      */
     private $queriedObject;
 
@@ -260,7 +252,7 @@ class MenuItemClasses {
 
     private function setTaxonomyAncestors(): void {
         if ($this->wpQuery->is_singular && !empty($this->queriedObject->post_type) && !$this->queriedPostTypeHierarchical) {
-            /** @var array<string,WP_Taxonomy> $taxonomies */
+            /** @var array<string,\WP_Taxonomy> $taxonomies */
             $taxonomies = get_object_taxonomies((string) $this->queriedObject->post_type, 'objects');
 
             foreach ($taxonomies as $taxonomy => $taxonomyObject) {
@@ -268,10 +260,10 @@ class MenuItemClasses {
                     /** @var array<int,int> $termHierarchy */
                     $termHierarchy = _get_term_hierarchy($taxonomy);
 
-                    /** @var int[]|WP_Error $terms */
+                    /** @var int[]|\WP_Error $terms */
                     $terms = wp_get_object_terms($this->queriedObjectId, $taxonomy, ['fields' => 'ids']);
 
-                    if (!$terms instanceof WP_Error) {
+                    if (!$terms instanceof \WP_Error) {
                         $this->possibleObjectParents = array_merge($this->possibleObjectParents, $terms);
 
                         /** @var array<int,int> $termToAncestor */
@@ -299,7 +291,7 @@ class MenuItemClasses {
                     }
                 }
             }
-        } elseif ($this->queriedObject instanceof WP_Term && is_taxonomy_hierarchical($this->queriedObject->taxonomy)) {
+        } elseif ($this->queriedObject instanceof \WP_Term && is_taxonomy_hierarchical($this->queriedObject->taxonomy)) {
             /** @var array<int,int> $termHierarchy */
             $termHierarchy = _get_term_hierarchy($this->queriedObject->taxonomy);
 
@@ -368,7 +360,7 @@ class MenuItemClasses {
                     return false;
                 }
 
-                if ($this->queriedObject instanceof WP_Post) {
+                if ($this->queriedObject instanceof \WP_Post) {
                     return \in_array((int) $parent->object_id, $this->queriedObject->ancestors, true) && $parent->object != $this->queriedObject->ID;
                 }
 
