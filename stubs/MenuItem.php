@@ -2,14 +2,12 @@
 
 namespace JazzMan\WpNavMenuCacheStub;
 
-use stdClass;
-
 /**
  * Class MenuItem.
  *
  * @SuppressWarnings(PHPMD)
  */
-class MenuItem extends stdClass {
+class MenuItem extends \stdClass {
     /**
      * The term_id if the menu item represents a taxonomy term.
      */

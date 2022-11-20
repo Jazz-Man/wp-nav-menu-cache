@@ -2,20 +2,16 @@
 
 namespace JazzMan\WpNavMenuCacheStub;
 
-use stdClass;
-use Walker_Nav_Menu;
-use WP_Term;
-
 /**
  * Class NavMenuArgs.
  *
  * @SuppressWarnings(PHPMD)
  */
-class NavMenuArgs extends stdClass {
+class NavMenuArgs extends \stdClass {
     /**
      * Desired menu. Accepts a menu ID, slug, name, or object. Default empty.
      *
-     * @var int|string|WP_Term
+     * @var int|string|\WP_Term
      *
      * @phpstan-ignore-next-line
      */
@@ -96,7 +92,7 @@ class NavMenuArgs extends stdClass {
      *
      * @phpstan-ignore-next-line
      */
-    public ?Walker_Nav_Menu $walker = null;
+    public ?\Walker_Nav_Menu $walker = null;
 
     /**
      * Theme location to be used. Must be registered with register_nav_menu()

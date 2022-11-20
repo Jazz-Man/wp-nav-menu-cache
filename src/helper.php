@@ -76,6 +76,7 @@ if (!function_exists('app_get_term_link')) {
 
                     wp_cache_set($ancestorsKey, $result, NavMenuCache::CACHE_GROUP);
                 }
+
                 $hierarchicalSlugs = array_reverse($hierarchicalSlugs);
             }
 
@@ -94,16 +95,16 @@ if (!function_exists('app_get_term_link')) {
 
 if (!function_exists('app_term_link_filter')) {
     /**
-     * @param \WP_Term $term
+     * @param \WP_Term $wpTerm
      */
-    function app_term_link_filter(WP_Term $term, string $termlink): string {
-        if ('post_tag' == $term->taxonomy) {
-            $termlink = (string) apply_filters('tag_link', $termlink, $term->term_id);
-        } elseif ('category' == $term->taxonomy) {
-            $termlink = (string) apply_filters('category_link', $termlink, $term->term_id);
+    function app_term_link_filter(WP_Term $wpTerm, string $termlink): string {
+        if ('post_tag' == $wpTerm->taxonomy) {
+            $termlink = (string) apply_filters('tag_link', $termlink, $wpTerm->term_id);
+        } elseif ('category' == $wpTerm->taxonomy) {
+            $termlink = (string) apply_filters('category_link', $termlink, $wpTerm->term_id);
         }
 
-        return (string) apply_filters('term_link', $termlink, $term, $term->taxonomy);
+        return (string) apply_filters('term_link', $termlink, $wpTerm, $wpTerm->taxonomy);
     }
 }
 
