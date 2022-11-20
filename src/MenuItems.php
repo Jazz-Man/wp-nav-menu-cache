@@ -52,7 +52,7 @@ final class MenuItems {
         }
 
         if (!empty($menuItems) && !is_admin()) {
-            $menuItems = array_filter($menuItems, '_is_valid_nav_menu_item');
+            return array_filter($menuItems, '_is_valid_nav_menu_item');
         }
 
         return $menuItems;
@@ -61,9 +61,9 @@ final class MenuItems {
     private static function generateSql(\WP_Term $wpTerm): Query {
         global $wpdb;
 
-        $factory = new QueryFactory();
+        $queryFactory = new QueryFactory();
 
-        $query = $factory
+        $selectQuery = $queryFactory
             ->select(
                 'menu.*',
                 alias('menu.post_content', 'description'),
@@ -96,8 +96,8 @@ final class MenuItems {
         ];
 
         foreach ($menuMetaFields as $field => $metaKey) {
-            $query->addColumns(alias("{$field}.meta_value", $field));
-            $query->leftJoin(
+            $selectQuery->addColumns(alias("{$field}.meta_value", $field));
+            $selectQuery->leftJoin(
                 alias($wpdb->postmeta, $field),
                 on('menu.ID', "{$field}.post_id")
                     ->and(
@@ -106,7 +106,7 @@ final class MenuItems {
             );
         }
 
-        $query->addColumns(
+        $selectQuery->addColumns(
             'term_tax.taxonomy',
             'term_tax.term_id',
             alias('term.name', 'term_name'),
@@ -116,24 +116,24 @@ final class MenuItems {
             alias('original_post.post_status', 'original_post_status'),
             alias('original_post.post_title', 'original_post_title'),
         );
-        $query->leftJoin(
+        $selectQuery->leftJoin(
             alias($wpdb->term_taxonomy, 'term_tax'),
             on('term_tax.term_id', 'object_id.meta_value')
                 ->and(field('type.meta_value')->eq('taxonomy'))
         );
 
-        $query->leftJoin(
+        $selectQuery->leftJoin(
             alias($wpdb->terms, 'term'),
             on('term_tax.term_id', 'term.term_id')
         );
 
-        $query->leftJoin(
+        $selectQuery->leftJoin(
             alias($wpdb->posts, 'original_post'),
             on('original_post.ID', 'object_id.meta_value')
                 ->and(field('type.meta_value')->eq('post_type'))
         );
 
-        return $query->compile();
+        return $selectQuery->compile();
     }
 
     /**
@@ -186,7 +186,7 @@ final class MenuItems {
             case 'taxonomy':
                 $typeLabel = sprintf('Taxonomy%s', self::getMenuTaxonomyLabels($menuItem));
 
-                $menuTitle = !empty($currentMenuTitle) ? $currentMenuTitle : (string) $menuItem->term_name;
+                $menuTitle = empty($currentMenuTitle) ? (string) $menuItem->term_name : $currentMenuTitle;
 
                 break;
 
@@ -196,7 +196,7 @@ final class MenuItems {
                 $postTypeObject = get_post_type_object((string) $menuItem->object);
 
                 if ($postTypeObject instanceof \WP_Post_Type) {
-                    $menuTitle = !empty($currentMenuTitle) ? $currentMenuTitle : (string) $postTypeObject->labels->archives;
+                    $menuTitle = empty($currentMenuTitle) ? (string) $postTypeObject->labels->archives : $currentMenuTitle;
 
                     $postTypeLabel .= sprintf(': %s', $postTypeObject->label);
                 }
@@ -259,7 +259,7 @@ final class MenuItems {
 
             $label = sprintf(
                 ': %s',
-                !empty($labels->singular_name) ? (string) $labels->singular_name : $taxonomy->label
+                empty($labels->singular_name) ? $taxonomy->label : (string) $labels->singular_name
             );
         }
 
@@ -285,7 +285,7 @@ final class MenuItems {
     private static function getMenuItemDescription($menuItem): string {
         switch ($menuItem->type) {
             case 'taxonomy':
-                $description = !empty($menuItem->term_description) ? (string) $menuItem->term_description : '';
+                $description = empty($menuItem->term_description) ? '' : (string) $menuItem->term_description;
 
                 break;
 
@@ -303,7 +303,7 @@ final class MenuItems {
                 break;
         }
 
-        $description = !empty($description) ? wp_trim_words($description, 200) : '';
+        $description = empty($description) ? '' : wp_trim_words($description, 200);
 
         return (string) apply_filters('nav_menu_description', $description);
     }
@@ -334,7 +334,7 @@ final class MenuItems {
                 break;
         }
 
-        return !empty($url) ? $url : '';
+        return empty($url) ? '' : $url;
     }
 
     /**
@@ -364,14 +364,14 @@ final class MenuItems {
      * @return string[]
      */
     private static function setMenuClasses($menuItem): array {
-        /** @var string[] $classes */
-        $classes = [];
-
-        if (!empty($menuItem->classes) && \is_string($menuItem->classes)) {
-            /** @var string[] $classes */
-            $classes = maybe_unserialize($menuItem->classes);
+        if (empty($menuItem->classes)) {
+            return [];
         }
 
-        return $classes;
+        if (!\is_string($menuItem->classes)) {
+            return [];
+        }
+
+        return maybe_unserialize($menuItem->classes);
     }
 }

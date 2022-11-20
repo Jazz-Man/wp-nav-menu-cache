@@ -15,7 +15,7 @@ final class NavMenuCache implements AutoloadInterface {
     public function load(): void {
         self::clearMenuCache();
 
-        add_filter('wp_nav_menu_args', function (array $args): array {
+        add_filter('wp_nav_menu_args', static function (array $args): array {
             $args['fallback_cb'] = '__return_empty_string';
 
             return $args;
@@ -84,7 +84,7 @@ final class NavMenuCache implements AutoloadInterface {
 
         $wrapId = self::getMenuWrapId($menu, $args);
 
-        $wrapClass = !empty($args->menu_class) ? (string) $args->menu_class : '';
+        $wrapClass = empty($args->menu_class) ? '' : (string) $args->menu_class;
 
         $items = (string) apply_filters('wp_nav_menu_items', $items, $args);
 
@@ -115,10 +115,9 @@ final class NavMenuCache implements AutoloadInterface {
      * We clear the cache when the term or post is updated.
      */
     private static function clearMenuCache(): void {
-        add_action('saved_term', function (int $termId, int $termTaxId, string $taxonomy): void {
+        add_action('saved_term', static function (int $termId, int $termTaxId, string $taxonomy): void {
             wp_cache_delete(sprintf('taxonomy_ancestors_%d_%s', $termId, $taxonomy), self::CACHE_GROUP);
             wp_cache_delete(sprintf('term_all_children_%d', $termId), self::CACHE_GROUP);
-
             app_term_get_all_children($termId);
         }, 10, 3);
 
@@ -126,8 +125,8 @@ final class NavMenuCache implements AutoloadInterface {
 
         $termActions = ['delete_term', 'wp_create_nav_menu', 'saved_nav_menu'];
 
-        foreach ($termActions as $action) {
-            add_action($action, function (int $termId): void {
+        foreach ($termActions as $termAction) {
+            add_action($termAction, static function (int $termId): void {
                 /** @var \WP_Error|\WP_Term $term */
                 $term = get_term($termId, 'nav_menu');
 
@@ -137,8 +136,8 @@ final class NavMenuCache implements AutoloadInterface {
             });
         }
 
-        foreach ($postActions as $action) {
-            add_action($action, function (int $menuId): void {
+        foreach ($postActions as $postAction) {
+            add_action($postAction, static function (int $menuId): void {
                 /** @var \WP_Error|\WP_Term[] $terms */
                 $terms = wp_get_post_terms($menuId, 'nav_menu');
 
@@ -154,7 +153,7 @@ final class NavMenuCache implements AutoloadInterface {
     /**
      * @param NavMenuArgs|\stdClass $args
      */
-    private function getMenuWrapId(\WP_Term $wpTerm, $args): string {
+    private static function getMenuWrapId(\WP_Term $wpTerm, $args): string {
         /** @var string[] $menuIdSlugs */
         static $menuIdSlugs = [];
 

@@ -198,6 +198,7 @@ final class MenuItemClasses {
             /** @var string[] $classes */
             $menuItem->classes = array_unique($classes);
         }
+
         $ancestorItemIds = array_filter(array_unique($ancestorItemIds));
         $activeParentItemIds = array_filter(array_unique($activeParentItemIds));
         $activeParentObjectIds = array_filter(array_unique($activeParentObjectIds));
@@ -262,7 +263,7 @@ final class MenuItemClasses {
         /** @var false|string $option */
         $option = get_option($optionName);
 
-        return !empty($option) ? (int) $option : 0;
+        return empty($option) ? 0 : (int) $option;
     }
 
     private function setTaxonomyAncestors(): void {

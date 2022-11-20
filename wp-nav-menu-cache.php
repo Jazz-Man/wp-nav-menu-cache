@@ -13,8 +13,13 @@
 
 use JazzMan\WpNavMenuCache\NavMenuCache;
 
-if (function_exists('app_autoload_classes') && class_exists(NavMenuCache::class)) {
-    app_autoload_classes([
-        NavMenuCache::class,
-    ]);
+if (!function_exists('app_autoload_classes')) {
+    return;
 }
+
+if (!class_exists(NavMenuCache::class)) {
+    return;
+}
+app_autoload_classes([
+    NavMenuCache::class,
+]);
