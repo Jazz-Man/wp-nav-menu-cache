@@ -51,6 +51,10 @@ final class MenuItems {
             }
         }
 
+        if (!empty($menuItems) && !is_admin()) {
+            $menuItems = array_filter($menuItems, '_is_valid_nav_menu_item');
+        }
+
         return $menuItems;
     }
 
