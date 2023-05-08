@@ -1,11 +1,16 @@
 parameters:
 	ignoreErrors:
 		-
-			message: "#^Method JazzMan\\\\WpNavMenuCache\\\\MenuItems\\:\\:setMenuClasses\\(\\) should return array\\<string\\> but returns mixed\\.$#"
+			message: "#^Method JazzMan\\\\WpNavMenuCache\\\\MenuItems\\:\\:setMenuClasses\\(\\) should return array\\<string\\> but returns array\\.$#"
 			count: 1
 			path: src/MenuItems.php
 
 		-
-			message: "#^Parameter \\#2 \\$fetch_argument of method PDOStatement\\:\\:fetchAll\\(\\) expects \\(callable\\(\\)\\: mixed\\)\\|int\\|string, array given\\.$#"
+			message: "#^PHPDoc tag @var with type stdClass is not subtype of native type WP_Post\\.$#"
+			count: 1
+			path: src/MenuItems.php
+
+		-
+			message: "#^Parameter \\#2 \\.\\.\\.\\$args of method PDOStatement\\:\\:fetchAll\\(\\) expects \\(callable\\(\\)\\: mixed\\)\\|int\\|string, array given\\.$#"
 			count: 1
 			path: src/helper.php
