@@ -11,15 +11,19 @@ final class NavMenuCache implements AutoloadInterface {
      * @var string
      */
     public const CACHE_GROUP = 'wp-nav-menu-cache';
-
     public function load(): void {
         self::clearMenuCache();
 
-        add_filter('wp_nav_menu_args', static function (array $args): array {
-            $args['fallback_cb'] = '__return_empty_string';
+        add_filter('wp_nav_menu_args', /**
+         * @return (mixed|string)[]
+         *
+         * @psalm-return array{fallback_cb: '__return_empty_string',...}
+         */
+            static function (array $args): array {
+                $args['fallback_cb'] = '__return_empty_string';
 
-            return $args;
-        });
+                return $args;
+            });
         add_filter('pre_wp_nav_menu', [self::class, 'buildWpNavMenu'], 10, 2);
     }
 
@@ -106,7 +110,6 @@ final class NavMenuCache implements AutoloadInterface {
 
         return (string) apply_filters('wp_nav_menu', $navMenu, $args);
     }
-
     public static function getMenuItemCacheKey(\WP_Term $wpTerm): string {
         return sprintf('%s_%s', $wpTerm->taxonomy, $wpTerm->slug);
     }
@@ -208,7 +211,6 @@ final class NavMenuCache implements AutoloadInterface {
 
         return $navMenu;
     }
-
     private static function deleteMenuItemCache(\WP_Term $wpTerm): void {
         wp_cache_delete(self::getMenuItemCacheKey($wpTerm), 'menu_items');
     }

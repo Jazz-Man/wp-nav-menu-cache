@@ -16,6 +16,7 @@ composer.phar
 composer.lock
 
 /.php[_|-]cs*.cache
-/cache/
+/cache/*
+!/cache/.gitkeep
 !.github/
 phpstan.neon

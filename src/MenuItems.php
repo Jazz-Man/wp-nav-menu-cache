@@ -4,18 +4,13 @@ namespace JazzMan\WpNavMenuCache;
 
 use JazzMan\WpNavMenuCacheStub\MenuItem;
 
-use function Latitude\QueryBuilder\alias;
-use function Latitude\QueryBuilder\field;
-use function Latitude\QueryBuilder\on;
-
-use Latitude\QueryBuilder\Query;
-use Latitude\QueryBuilder\QueryFactory;
-
 final class MenuItems {
     /**
      * @return MenuItem[]|\stdClass[]
      */
     public static function getItems(\WP_Term $wpTerm): array {
+	    global $wpdb;
+
         $cacheKey = NavMenuCache::getMenuItemCacheKey($wpTerm);
 
         /** @var false|MenuItem[]|\stdClass[] $menuItems */
@@ -25,11 +20,56 @@ final class MenuItems {
             try {
                 $pdo = app_db_pdo();
 
-                $query = self::generateSql($wpTerm);
+                $pdoStatement = $pdo->prepare(
+                    <<<SQL
+                        select
+                          menu.*,
+                          menu.post_content as description,
+                          menu.post_excerpt as attr_title,
+                          classes.meta_value as classes,
+                          parent.meta_value as menu_item_parent,
+                          object.meta_value as object,
+                          object_id.meta_value as object_id,
+                          target.meta_value as target,
+                          type.meta_value as type,
+                          url.meta_value as url,
+                          xfn.meta_value as xfn,
+                          term_tax.taxonomy,
+                          term_tax.term_id,
+                          term.name as term_name,
+                          term_tax.description as term_description,
+                          term_tax.parent as term_parent,
+                          original_post.ID as original_id,
+                          original_post.post_status as original_post_status,
+                          original_post.post_title as original_post_title
+                        from $wpdb->posts as menu
+                        left join $wpdb->term_relationships as tr on menu.ID = tr.object_id
+                        left join $wpdb->postmeta as classes on menu.ID = classes.post_id and classes.meta_key = '_menu_item_classes'
+                        left join $wpdb->postmeta as parent on menu.ID = parent.post_id and parent.meta_key = '_menu_item_menu_item_parent'
+                        left join $wpdb->postmeta as object on menu.ID = object.post_id and object.meta_key = '_menu_item_object'
+                        left join $wpdb->postmeta as object_id on menu.ID = object_id.post_id and object_id.meta_key = '_menu_item_object_id'
+                        left join $wpdb->postmeta as target on menu.ID = target.post_id and target.meta_key = '_menu_item_target'
+                        left join $wpdb->postmeta as type on menu.ID = type.post_id and type.meta_key = '_menu_item_type'
+                        left join $wpdb->postmeta as url on menu.ID = url.post_id and url.meta_key = '_menu_item_url'
+                        left join $wpdb->postmeta as xfn on menu.ID = xfn.post_id and xfn.meta_key = '_menu_item_xfn'
+                        left join $wpdb->term_taxonomy as term_tax on term_tax.term_id = object_id.meta_value and type.meta_value = 'taxonomy'
+                        left join $wpdb->terms as term on term_tax.term_id = term.term_id
+                        left join $wpdb->posts as original_post on original_post.ID = object_id.meta_value and type.meta_value = 'post_type'
+                        where
+                            tr.term_taxonomy_id = :taxonomy_id
+                        and menu.post_type = 'nav_menu_item'
+                        and menu.post_status = 'publish'
+                        group by
+                          menu.ID,
+                          menu.menu_order
+                        order by
+                          menu.menu_order asc
+                        SQL
+                );
 
-                $pdoStatement = $pdo->prepare($query->sql());
-
-                $pdoStatement->execute($query->params());
+                $pdoStatement->execute([
+                    ':taxonomy_id' => $wpTerm->term_id,
+                ]);
 
                 /** @var MenuItem[]|\stdClass[] $menuItems */
                 $menuItems = $pdoStatement->fetchAll(\PDO::FETCH_OBJ);
@@ -40,7 +80,6 @@ final class MenuItems {
 
                 wp_cache_set($cacheKey, $menuItems, 'menu_items');
             } catch (\Exception $exception) {
-                /** @var MenuItem|\stdClass $item */
                 $item = new \stdClass();
                 $item->_invalid = true;
 
@@ -56,84 +95,6 @@ final class MenuItems {
         }
 
         return $menuItems;
-    }
-
-    private static function generateSql(\WP_Term $wpTerm): Query {
-        global $wpdb;
-
-        $queryFactory = new QueryFactory();
-
-        $selectQuery = $queryFactory
-            ->select(
-                'menu.*',
-                alias('menu.post_content', 'description'),
-                alias('menu.post_excerpt', 'attr_title')
-            )
-            ->from(alias($wpdb->posts, 'menu'))
-            ->leftJoin(
-                alias($wpdb->term_relationships, 'tr'),
-                on('menu.ID', 'tr.object_id')
-            )
-            ->where(
-                field('tr.term_taxonomy_id')
-                    ->eq($wpTerm->term_taxonomy_id)
-                    ->and(field('menu.post_type')->eq('nav_menu_item'))
-                    ->and(field('menu.post_status')->eq('publish'))
-            )
-            ->groupBy('menu.ID', 'menu.menu_order')
-            ->orderBy('menu.menu_order', 'asc')
-        ;
-
-        $menuMetaFields = [
-            'classes' => '_menu_item_classes',
-            'menu_item_parent' => '_menu_item_menu_item_parent',
-            'object' => '_menu_item_object',
-            'object_id' => '_menu_item_object_id',
-            'target' => '_menu_item_target',
-            'type' => '_menu_item_type',
-            'url' => '_menu_item_url',
-            'xfn' => '_menu_item_xfn',
-        ];
-
-        foreach ($menuMetaFields as $field => $metaKey) {
-            $selectQuery->addColumns(alias("{$field}.meta_value", $field));
-            $selectQuery->leftJoin(
-                alias($wpdb->postmeta, $field),
-                on('menu.ID', "{$field}.post_id")
-                    ->and(
-                        field("{$field}.meta_key")->eq($metaKey)
-                    )
-            );
-        }
-
-        $selectQuery->addColumns(
-            'term_tax.taxonomy',
-            'term_tax.term_id',
-            alias('term.name', 'term_name'),
-            alias('term_tax.description', 'term_description'),
-            alias('term_tax.parent', 'term_parent'),
-            alias('original_post.ID', 'original_id'),
-            alias('original_post.post_status', 'original_post_status'),
-            alias('original_post.post_title', 'original_post_title'),
-        );
-        $selectQuery->leftJoin(
-            alias($wpdb->term_taxonomy, 'term_tax'),
-            on('term_tax.term_id', 'object_id.meta_value')
-                ->and(field('type.meta_value')->eq('taxonomy'))
-        );
-
-        $selectQuery->leftJoin(
-            alias($wpdb->terms, 'term'),
-            on('term_tax.term_id', 'term.term_id')
-        );
-
-        $selectQuery->leftJoin(
-            alias($wpdb->posts, 'original_post'),
-            on('original_post.ID', 'object_id.meta_value')
-                ->and(field('type.meta_value')->eq('post_type'))
-        );
-
-        return $selectQuery->compile();
     }
 
     /**
@@ -361,6 +322,7 @@ final class MenuItems {
     /**
      * @param MenuItem|\stdClass $menuItem
      *
+     * @psalm-return string[]
      * @return string[]
      */
     private static function setMenuClasses($menuItem): array {
@@ -372,6 +334,6 @@ final class MenuItems {
             return [];
         }
 
-        return maybe_unserialize($menuItem->classes);
+        return (array) maybe_unserialize($menuItem->classes);
     }
 }
