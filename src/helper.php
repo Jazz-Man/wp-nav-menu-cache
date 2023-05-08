@@ -112,7 +112,9 @@ if (!function_exists('app_get_taxonomy_ancestors')) {
     /**
      * @param array<array-key, mixed> ...$args PDO fetch options
      *
-     * @return array<string,int|string>|false
+     * @return (int|string)[]|false
+     *
+     * @psalm-return array<string, int|string>|false
      */
     function app_get_taxonomy_ancestors(int $termId, string $taxonomy, int $mode = PDO::FETCH_COLUMN, ...$args) {
         global $wpdb;
